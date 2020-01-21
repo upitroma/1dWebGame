@@ -30,12 +30,8 @@ io.on("connection",function(socket){
     io.sockets.emit("serverPublic","new connection on socket: "+socket.id+". Current active sockets: "+getTotalActiveSockets())
 
     //listen for data
-    socket.on("chat",function(data){
-        io.sockets.emit("chat",data)
-    });
-
-    socket.on("typing",function(data){
-        socket.broadcast.emit("typing",data)
+    socket.on("keypress",function(data){
+        socket.broadcast.emit("keypress",data)
     });
 
     socket.on('disconnect', function(){
