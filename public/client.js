@@ -1,5 +1,6 @@
 //Make connection
 var socket = io.connect(window.location.href);//change to server's location
+var mySocketId = -1
 
 
 //get html assets
@@ -9,30 +10,24 @@ var canvas = document.getElementById('canvas'),
 
 //define player for later
 class player{
-    /*
-    constructor(socketId, username, color, score, position, cooldown){
-        this.socketId=socketId;
-        this.username=username;
-        this.color=color;
-        this.score=score;
+    constructor(position, id){
         this.position=position;
-        this.cooldown=cooldown;
-    }
-    */
-    //test constructor
-    constructor(position){
-        this.position=position;
+        this.id=id;
     }
 }
 
 //handle inputs
-var keys = {};
+var keys = [];
 window.onkeyup = function(e) { keys[e.keyCode] = false; }
 window.onkeydown = function(e) { keys[e.keyCode] = true; } 
 
 //canvas setup----------------------------
 
-var p1=new player(0);
+
+
+var players=[];
+
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -50,7 +45,8 @@ function drawBorder(){
 
 
 //game logic------------------------------------
-
+var uploadrate=.1
+var uploadtimer=0
 window.onload = function(){
     function update(deltatime){
         // ten times/second
@@ -62,27 +58,45 @@ window.onload = function(){
         81 q
         69 e
         */
-
-        if(keys[65]){
-            p1.position-=200*deltatime
-        }
-        if(keys[68]){
-            p1.position+=200*deltatime
-        }
-
-        //clamp coordinate within the border
-        p1.position=Math.max(borderm, Math.min(p1.position, canvas.width-borderh-borderm))
-
         canvas.width=canvas.width;//refresh canvas
         drawBorder()
 
-        context.fillStyle= 'red';
-        context.fillRect(p1.position,bordery,borderh,borderh);
+        players.forEach(function(p){
+            if(p.id==mySocketId){
+                if(keys[65]){
+                    p.position-=200*deltatime
+                }
+                if(keys[68]){
+                    p.position+=200*deltatime
+                }
+                uploadtimer+=deltatime
+                if(uploadtimer>uploadrate){
+                    updatePlayer(p)
+                    console.log("I moved to "+p.position)
+                }
+                
 
+                //clamp coordinate within the border
+                p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
+                context.fillStyle= 'red';
+                context.fillRect(p.position,bordery,borderh,borderh);
+
+                //identify me
+                context.fillStyle= 'white';
+                context.fillRect(p.position+(borderh/4),bordery+(borderh/4),borderh-(borderh/2),borderh-(borderh/2));
+            }
+            else{
+                //clamp coordinate within the border
+                p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
+                context.fillStyle= 'red';
+                context.fillRect(p.position,bordery,borderh,borderh);
+            }
+            
+        });
         context.stroke();
+        
+ 
     }
-
-
 
     //tick----------------
     
@@ -101,19 +115,49 @@ window.onload = function(){
 //networking---------------------------
 
 //emmit events
-message.addEventListener("keypress",function(){
-    socket.emit("keypress",handle.value);
-});
+function updatePlayer(p){
+    socket.emit("playerdata",{
+        position: p.position
+    });
+}
 
 //listen for server events
-socket.on("keypress",function(data){
-    console.log(data.message);
-});
+
 socket.on("serverPrivate",function(data){
-    serverInfo.innerHTML="<p><em>[server]: "+data+"</em></p>";
-    output.innerHTML+= "<p><server>"+"Server (only you can read this)"+": </server>"+data+"</p>";
+    if(mySocketId==-1){
+        //add self to game
+        mySocketId=data
+    }
 });
-socket.on("serverPublic",function(data){
-    output.innerHTML+= "<p><server>"+"Server"+": </server>"+data+"</p>";
-    serverInfo.innerHTML="<p><server>"+"Server"+": </server>"+data+"</p>"
+
+socket.on("newPlayer",function(data){
+    players.push(new player(Math.floor(data.random * (canvas.width-borderh-borderm+1)),data.id))
 })
+
+socket.on("serverMessage",function(data){
+    serverInfo.innerHTML="[server]: "+data
+})
+
+socket.on("playerdata",function(data){
+    //update player in question and add unrecognised players
+    console.log("socket "+data.id+" moved to "+ data.position);
+
+    
+    var isNew = true
+    //move the player
+    if(data.id!=mySocketId){
+        players.forEach(function(p){
+            if(p.id==data.id){
+                p.position=data.position
+                isNew=false
+            }
+        });
+
+        if(isNew){
+            players.push(new player(data.position,data.id))
+        }
+
+    }
+    
+
+});

@@ -3,8 +3,8 @@ var socket = require("socket.io")
 
 //app setup
 var app = express();
-var server = app.listen(4000,function(){
-    console.log("Server is up on http://"+getIp()+":4000")
+var server = app.listen(5000,function(){
+    console.log("Server is up on http://"+getIp()+":5000")
 });
 
 //static files
@@ -25,14 +25,22 @@ io.on("connection",function(socket){
     socket.id=clientId++
     lookup[socket.id]=socket
     isActiveLookup[socket.id]=true
-    lookup[socket.id].emit("serverPrivate","connected to server on socket: "+socket.id)
+    lookup[socket.id].emit("serverPrivate",socket.id)
     console.log("client connected on socket: ",socket.id +" Current active sockets: "+getTotalActiveSockets())
-    io.sockets.emit("serverPublic","new connection on socket: "+socket.id+". Current active sockets: "+getTotalActiveSockets())
+    io.sockets.emit("serverMessage","new connection on socket: "+socket.id+". Current active sockets: "+getTotalActiveSockets())
+    io.sockets.emit("newPlayer",{
+        random: Math.random(),
+        id: socket.id
+    });
 
     //listen for data
-    socket.on("keypress",function(data){
-        socket.broadcast.emit("keypress",data)
+    socket.on("playerdata",function(data){
+        socket.broadcast.emit("playerdata",{
+            position: data.position,
+            id: socket.id
+        })//needs to be scrubbed
     });
+
 
     socket.on('disconnect', function(){
         console.info('user disconnected from socket: ' + socket.id+" Current active sockets: "+getTotalActiveSockets());
