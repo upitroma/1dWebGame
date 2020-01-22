@@ -37,6 +37,7 @@ io.on("connection",function(socket){
     socket.on("playerdata",function(data){
         socket.broadcast.emit("playerdata",{
             position: data.position,
+            colorId: data.colorId,
             id: socket.id
         })//needs to be scrubbed
     });

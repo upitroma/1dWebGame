@@ -169,7 +169,8 @@ window.onload = function(){
 //emmit events
 function updatePlayer(p){
     socket.emit("playerdata",{
-        position: p.position
+        position: p.position,
+        colorId: p.colorId
     });
 }
 
@@ -211,6 +212,7 @@ socket.on("playerdata",function(data){
             if(p.id==data.id){
                 if(p.isActive){
                     p.position=data.position
+                    p.colorId=data.colorId
                     isNew=false
                 }
                 else{
