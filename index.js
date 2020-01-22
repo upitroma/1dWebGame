@@ -42,6 +42,14 @@ io.on("connection",function(socket){
         })//needs to be scrubbed
     });
 
+    socket.on("fireBullet",function(data){
+        socket.broadcast.emit("fireBullet",{
+            startPosition: data.startPosition,
+            colorId: data.colorId,
+            direction: data.direction,
+            shooterId: socket.id
+        })//needs to be scrubbed
+    });
 
     socket.on('disconnect', function(){
         console.info('user disconnected from socket: ' + socket.id+" Current active sockets: "+getTotalActiveSockets());

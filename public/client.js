@@ -3,6 +3,7 @@ var socket = io.connect(window.location.href);//change to server's location
 var mySocketId = -1
 
 var uploadrate=.3
+var fireRate=1
 
 
 //get html assets
@@ -10,13 +11,26 @@ var canvas = document.getElementById('canvas'),
     context = canvas.getContext('2d'),
     serverInfo = document.getElementById("serverinfo");
 
-//define player for later
+//hide scrollbar
+document.body.style.overflow = 'hidden';
+
+
+//define objects
 class player{
     constructor(position, id){
         this.position=position;
         this.id=id;
         this.isActive=true;
         this.colorId = 2;
+    }
+}
+class bullet{
+    constructor(position, colorId, shooterId, direction){
+        this.position=position
+        this.colorId=colorId
+        this.shooterId=shooterId
+        this.isActive=true
+        this.direction=direction //1=right, -1=left
     }
 }
 
@@ -33,13 +47,13 @@ var pastKeys = []
 
 
 var players=[];
-
+var bullets=[];
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var bordery=(window.innerHeight/2)-100
-var borderh=100
+var borderh=50
 var borderm=50
 function drawBorder(){
 
@@ -54,6 +68,7 @@ function drawBorder(){
 //game logic------------------------------------
 
 var uploadtimer=0
+var fireTimer=0
 window.onload = function(){
     function update(deltatime){
         // ten times/second
@@ -68,10 +83,29 @@ window.onload = function(){
         canvas.width=canvas.width;//refresh canvas
         drawBorder()
 
-        players.forEach(function(p){
+        //render bullets
+        bullets.forEach(function(b){
+
+            //get color
+            var color
+            if(b.colorId==0){color="red"}
+            else if(b.colorId==1){color="green"}
+            else if(b.colorId==2){color="blue"}
+
+            //move bullet
+            
+            b.position += ((b.colorId*100)+250)*deltatime*b.direction
             
 
 
+            //render bullet
+            context.fillStyle=color;
+            context.fillRect(b.position+(borderh*.45),bordery,borderh-(borderh*.9),borderh);
+        });
+
+        //render players
+        players.forEach(function(p){
+            
             //get color
             var color
             if(p.colorId==0){color="red"}
@@ -81,10 +115,10 @@ window.onload = function(){
 
             if(p.id==mySocketId){
                 if(keys[65]){
-                    p.position-=200*deltatime
+                    p.position-=400*deltatime//200
                 }
                 if(keys[68]){
-                    p.position+=200*deltatime
+                    p.position+=400*deltatime//200
                 }
 
                 //change color
@@ -98,12 +132,10 @@ window.onload = function(){
                 if(keys[81]&&!pastKeys[81]){
                     p.colorId--
                     pastKeys[81]=true
-                    
                 }
                 else if(!keys[81]){
                     pastKeys[81]=false
                 }
-
                 //loop color
                 if(p.colorId<0){
                     p.colorId=2
@@ -111,7 +143,28 @@ window.onload = function(){
                 if(p.colorId>2){
                     p.colorId=0
                 }
-                console.log(p.colorId)
+
+                //fire bullet
+                fireTimer+=deltatime
+
+                if(fireTimer>fireRate){
+                    if(keys[37]&&!pastKeys[37]){
+                        fireBullet(p,-1)
+                        pastKeys[37]=true
+                        fireTimer=0
+                    }
+                    else if(!keys[37]){
+                        pastKeys[37]=false
+                    }
+                    if(keys[39]&&!pastKeys[39]){
+                        fireBullet(p,1)
+                        pastKeys[39]=true
+                        fireTimer=0
+                    }
+                    else if(!keys[39]){
+                        pastKeys[39]=false
+                    }
+                }
                 
 
 
@@ -130,8 +183,8 @@ window.onload = function(){
                 context.fillRect(p.position,bordery,borderh,borderh);
 
                 //identify me
-                context.fillStyle= 'white';
-                context.fillRect(p.position+(borderh/4),bordery+(borderh/4),borderh-(borderh/2),borderh-(borderh/2));
+                context.fillStyle= 'gold';
+                context.fillRect(p.position+(borderh*.45),bordery,borderh-(borderh*.9),borderh);
             }
             else if(p.isActive){
 
@@ -174,7 +227,20 @@ function updatePlayer(p){
     });
 }
 
+function fireBullet(p,direction){
+    socket.emit("fireBullet",{
+        startPosition: p.position,
+        direction: direction,
+        colorId: p.colorId
+    });
+}
+
 //listen for server events
+socket.on("fireBullet",function(data){
+    bullets.push(new bullet(data.startPosition,data.colorId,data.shooterId,data.direction))
+    console.log(data.direction)
+});
+
 
 socket.on("serverPrivate",function(data){
     if(mySocketId==-1){
