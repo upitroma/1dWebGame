@@ -95,9 +95,12 @@ window.onload = function(){
                 else if(b.colorId==2){color="blue"}
 
                 //move bullet
-                
                 b.position += ((b.colorId*100)+250)*deltatime*b.direction
                 
+                //wrap bullet
+                //p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
+                if(b.position>canvas.width){b.position=0}
+                else if(b.position<0){b.position=canvas.width}
 
 
                 //render bullet
@@ -171,10 +174,7 @@ window.onload = function(){
                 }
                 
 
-
-                
-
-
+                //send data
                 uploadtimer+=deltatime
                 if(uploadtimer>uploadrate){
                     updatePlayer(p)
@@ -200,14 +200,11 @@ window.onload = function(){
                                 b.isActive=false
                                 amHit(b)
                             }
-                            
                         }
                     }
                 });
             }
             else if(p.isActive){
-
-                
 
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
@@ -217,10 +214,6 @@ window.onload = function(){
             
         });
         context.stroke();
-
-
-        
-        
  
     }
 
