@@ -2,6 +2,8 @@
 var socket = io.connect(window.location.href);//change to server's location
 var mySocketId = -1
 
+var uploadrate=.3
+
 
 //get html assets
 var canvas = document.getElementById('canvas'),
@@ -13,6 +15,8 @@ class player{
     constructor(position, id){
         this.position=position;
         this.id=id;
+        this.isActive=true;
+        this.inactiveTimer=0;
     }
 }
 
@@ -45,7 +49,7 @@ function drawBorder(){
 
 
 //game logic------------------------------------
-var uploadrate=.1
+
 var uploadtimer=0
 window.onload = function(){
     function update(deltatime){
@@ -72,7 +76,6 @@ window.onload = function(){
                 uploadtimer+=deltatime
                 if(uploadtimer>uploadrate){
                     updatePlayer(p)
-                    console.log("I moved to "+p.position)
                 }
                 
 
@@ -85,7 +88,7 @@ window.onload = function(){
                 context.fillStyle= 'white';
                 context.fillRect(p.position+(borderh/4),bordery+(borderh/4),borderh-(borderh/2),borderh-(borderh/2));
             }
-            else{
+            else if(p.isActive){
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
                 context.fillStyle= 'red';
@@ -130,6 +133,20 @@ socket.on("serverPrivate",function(data){
     }
 });
 
+socket.on("serverPlayerDisconnect",function(data){
+    console.log(data+"disconnected")
+    
+    for( var i = 0; i < players.length; i++){ 
+        if ( players[i].id == data) {
+            players[i].isActive=false
+            players.splice(i, 1); 
+            
+        }
+     }
+     
+     
+})
+
 socket.on("newPlayer",function(data){
     players.push(new player(Math.floor(data.random * (canvas.width-borderh-borderm+1)),data.id))
 })
@@ -140,24 +157,24 @@ socket.on("serverMessage",function(data){
 
 socket.on("playerdata",function(data){
     //update player in question and add unrecognised players
-    console.log("socket "+data.id+" moved to "+ data.position);
 
-    
     var isNew = true
     //move the player
     if(data.id!=mySocketId){
         players.forEach(function(p){
             if(p.id==data.id){
-                p.position=data.position
-                isNew=false
+                if(p.isActive){
+                    p.position=data.position
+                    isNew=false
+                }
+                else{
+                    isNew=false
+                }
             }
         });
 
         if(isNew){
             players.push(new player(data.position,data.id))
         }
-
     }
-    
-
 });
