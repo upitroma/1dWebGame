@@ -26,6 +26,8 @@ var keys = [];
 window.onkeyup = function(e) { keys[e.keyCode] = false; }
 window.onkeydown = function(e) { keys[e.keyCode] = true; } 
 
+var pastKeys = []
+
 //canvas setup----------------------------
 
 
@@ -67,6 +69,9 @@ window.onload = function(){
         drawBorder()
 
         players.forEach(function(p){
+            
+
+
             //get color
             var color
             if(p.colorId==0){color="red"}
@@ -81,6 +86,38 @@ window.onload = function(){
                 if(keys[68]){
                     p.position+=200*deltatime
                 }
+
+                //change color
+                if(keys[69]&&!pastKeys[69]){
+                    p.colorId++
+                    pastKeys[69]=true
+                }
+                else if(!keys[69]){
+                    pastKeys[69]=false
+                }
+                if(keys[81]&&!pastKeys[81]){
+                    p.colorId--
+                    pastKeys[81]=true
+                    
+                }
+                else if(!keys[81]){
+                    pastKeys[81]=false
+                }
+
+                //loop color
+                if(p.colorId<0){
+                    p.colorId=2
+                }
+                if(p.colorId>2){
+                    p.colorId=0
+                }
+                console.log(p.colorId)
+                
+
+
+                
+
+
                 uploadtimer+=deltatime
                 if(uploadtimer>uploadrate){
                     updatePlayer(p)
@@ -125,6 +162,7 @@ window.onload = function(){
     }
     window.requestAnimationFrame(tick)
 }
+
 
 //networking---------------------------
 
