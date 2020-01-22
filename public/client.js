@@ -16,9 +16,10 @@ class player{
         this.position=position;
         this.id=id;
         this.isActive=true;
-        this.inactiveTimer=0;
+        this.colorId = 2;
     }
 }
+
 
 //handle inputs
 var keys = [];
@@ -66,6 +67,13 @@ window.onload = function(){
         drawBorder()
 
         players.forEach(function(p){
+            //get color
+            var color
+            if(p.colorId==0){color="red"}
+            else if(p.colorId==1){color="green"}
+            else if(p.colorId==2){color="blue"}
+
+
             if(p.id==mySocketId){
                 if(keys[65]){
                     p.position-=200*deltatime
@@ -81,7 +89,7 @@ window.onload = function(){
 
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
-                context.fillStyle= 'red';
+                context.fillStyle= color;
                 context.fillRect(p.position,bordery,borderh,borderh);
 
                 //identify me
@@ -89,9 +97,12 @@ window.onload = function(){
                 context.fillRect(p.position+(borderh/4),bordery+(borderh/4),borderh-(borderh/2),borderh-(borderh/2));
             }
             else if(p.isActive){
+
+                
+
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
-                context.fillStyle= 'red';
+                context.fillStyle= color;
                 context.fillRect(p.position,bordery,borderh,borderh);
             }
             
@@ -134,17 +145,14 @@ socket.on("serverPrivate",function(data){
 });
 
 socket.on("serverPlayerDisconnect",function(data){
-    console.log(data+"disconnected")
-    
+
     for( var i = 0; i < players.length; i++){ 
         if ( players[i].id == data) {
             players[i].isActive=false
-            players.splice(i, 1); 
-            
+
+            players.splice(i, 1);//save some memory
         }
      }
-     
-     
 })
 
 socket.on("newPlayer",function(data){
