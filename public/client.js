@@ -25,12 +25,13 @@ class player{
     }
 }
 class bullet{
-    constructor(position, colorId, shooterId, direction){
+    constructor(position, colorId, shooterId, direction,bulletId){
         this.position=position
         this.colorId=colorId
         this.shooterId=shooterId
         this.isActive=true
         this.direction=direction //1=right, -1=left
+        this.bulletId=bulletId
     }
 }
 
@@ -69,6 +70,7 @@ function drawBorder(){
 
 var uploadtimer=0
 var fireTimer=0
+var bulletId=0
 window.onload = function(){
     function update(deltatime){
         // ten times/second
@@ -85,22 +87,23 @@ window.onload = function(){
 
         //render bullets
         bullets.forEach(function(b){
+            if(b.isActive){
+                //get color
+                var color
+                if(b.colorId==0){color="red"}
+                else if(b.colorId==1){color="green"}
+                else if(b.colorId==2){color="blue"}
 
-            //get color
-            var color
-            if(b.colorId==0){color="red"}
-            else if(b.colorId==1){color="green"}
-            else if(b.colorId==2){color="blue"}
-
-            //move bullet
-            
-            b.position += ((b.colorId*100)+250)*deltatime*b.direction
-            
+                //move bullet
+                
+                b.position += ((b.colorId*100)+250)*deltatime*b.direction
+                
 
 
-            //render bullet
-            context.fillStyle=color;
-            context.fillRect(b.position+(borderh*.45),bordery,borderh-(borderh*.9),borderh);
+                //render bullet
+                context.fillStyle=color;
+                context.fillRect(b.position+(borderh*.45),bordery,borderh-(borderh*.9),borderh);
+            }
         });
 
         //render players
@@ -115,10 +118,10 @@ window.onload = function(){
 
             if(p.id==mySocketId){
                 if(keys[65]){
-                    p.position-=400*deltatime//200
+                    p.position-=200*deltatime//200
                 }
                 if(keys[68]){
-                    p.position+=400*deltatime//200
+                    p.position+=200*deltatime//200
                 }
 
                 //change color
@@ -148,8 +151,9 @@ window.onload = function(){
                 fireTimer+=deltatime
 
                 if(fireTimer>fireRate){
+                    bulletId++
                     if(keys[37]&&!pastKeys[37]){
-                        fireBullet(p,-1)
+                        fireBullet(p,-1,bulletId)
                         pastKeys[37]=true
                         fireTimer=0
                     }
@@ -157,7 +161,7 @@ window.onload = function(){
                         pastKeys[37]=false
                     }
                     if(keys[39]&&!pastKeys[39]){
-                        fireBullet(p,1)
+                        fireBullet(p,1,bulletId)
                         pastKeys[39]=true
                         fireTimer=0
                     }
@@ -189,12 +193,12 @@ window.onload = function(){
                 //collision
                 bullets.forEach(function(b){
                     if(b.isActive){
-                        if(b.position<p.position+borderh&&b.position>p.position){
+                        if(b.position< (p.position+(borderh/2)) && (b.position>p.position)){
                             //bullet is touching
-                            console.log("hit")
                             if(b.colorId!=p.colorId){
-                                //colors match
+                                //colors don't match
                                 b.isActive=false
+                                amHit(b)
                             }
                             
                         }
@@ -215,7 +219,6 @@ window.onload = function(){
         context.stroke();
 
 
-        //collision
         
         
  
@@ -246,17 +249,48 @@ function updatePlayer(p){
     });
 }
 
-function fireBullet(p,direction){
+function fireBullet(p,direction,bulletId){
     socket.emit("fireBullet",{
         startPosition: p.position,
         direction: direction,
-        colorId: p.colorId
+        colorId: p.colorId,
+        bulletId: bulletId
     });
+    
+    
+}
+
+function amHit(b){
+    socket.emit("amHit",{
+        bulletId: b.bulletId,
+        shooterId: b.shooterId
+    })
 }
 
 //listen for server events
 socket.on("fireBullet",function(data){
-    bullets.push(new bullet(data.startPosition,data.colorId,data.shooterId,data.direction))
+    bullets.push(new bullet(data.startPosition,data.colorId,data.shooterId,data.direction,data.bulletId))
+});
+
+socket.on("amHit",function(data){
+    //register hit
+    if(data.hitPlayerId==mySocketId){
+        //I was hit
+        console.log("I was hit by "+data.shooterId)
+    }
+
+    //register kill
+    if(data.shooterId==mySocketId){
+        //i got the hit
+        console.log("I shot "+data.hitPlayerId)
+    }
+
+    //destroy bullet
+    bullets.forEach(function(b){
+        if(b.shooterId==data.shooterId && b.bulletId==data.bulletId){
+            b.isActive=false
+        }
+    })
 });
 
 

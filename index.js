@@ -47,7 +47,16 @@ io.on("connection",function(socket){
             startPosition: data.startPosition,
             colorId: data.colorId,
             direction: data.direction,
+            bulletId: data.bulletId,
             shooterId: socket.id
+        })//needs to be scrubbed
+    });
+
+    socket.on("amHit",function(data){
+        socket.broadcast.emit("amHit",{
+            bulletId: data.bulletId,
+            shooterId: data.shooterId,
+            hitPlayerId: socket.id
         })//needs to be scrubbed
     });
 
