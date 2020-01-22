@@ -53,7 +53,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var bordery=(window.innerHeight/2)-100
-var borderh=50
+var borderh=100
 var borderm=50
 function drawBorder(){
 
@@ -185,6 +185,21 @@ window.onload = function(){
                 //identify me
                 context.fillStyle= 'gold';
                 context.fillRect(p.position+(borderh*.45),bordery,borderh-(borderh*.9),borderh);
+
+                //collision
+                bullets.forEach(function(b){
+                    if(b.isActive){
+                        if(b.position<p.position+borderh&&b.position>p.position){
+                            //bullet is touching
+                            console.log("hit")
+                            if(b.colorId!=p.colorId){
+                                //colors match
+                                b.isActive=false
+                            }
+                            
+                        }
+                    }
+                });
             }
             else if(p.isActive){
 
@@ -198,6 +213,10 @@ window.onload = function(){
             
         });
         context.stroke();
+
+
+        //collision
+        
         
  
     }
@@ -238,7 +257,6 @@ function fireBullet(p,direction){
 //listen for server events
 socket.on("fireBullet",function(data){
     bullets.push(new bullet(data.startPosition,data.colorId,data.shooterId,data.direction))
-    console.log(data.direction)
 });
 
 
