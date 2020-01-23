@@ -60,6 +60,10 @@ io.on("connection",function(socket){
         })//needs to be scrubbed
     });
 
+    socket.on("IDead",function(data){
+        socket.broadcast.emit("IDead",socket.id)
+    });
+
     socket.on('disconnect', function(){
         console.info('user disconnected from socket: ' + socket.id+" Current active sockets: "+getTotalActiveSockets());
         isActiveLookup[socket.id]=false

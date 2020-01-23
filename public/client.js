@@ -84,7 +84,7 @@ function drawHud(health){
 var uploadtimer=0
 var fireTimer=0
 var bulletId=0
-var amDead=false
+var amDead=false//for own player
 window.onload = function(){
     function update(deltatime){
         // ten times/second
@@ -112,8 +112,8 @@ window.onload = function(){
                 b.position += ((b.colorId*100)+250)*deltatime*b.direction
                 
                 //wrap bullet
-                if(b.position>canvas.width-(2*borderm)){b.position=borderm}
-                else if(b.position<borderm){b.position=canvas.width-(2*borderm)}
+                if(b.position>canvas.width-(borderm)){b.position=borderm}
+                else if(b.position<borderm){b.position=canvas.width-(borderm)}
 
 
                 //render bullet
@@ -211,17 +211,20 @@ window.onload = function(){
 
                 //collision
                 bullets.forEach(function(b){
-                    if(b.isActive){
-                        if(b.position< (p.position+(borderh/2)) && (b.position>p.position)){ //idk why borderh/2 but it just works
-                            //bullet is touching
-                            if(b.colorId!=p.colorId){
-                                //colors don't match
-                                p.health--
-                                if(p.health<1){
-                                    amDead=true
+                    if(p.health>0){
+                        if(b.isActive){
+                            if(b.position< (p.position+(borderh/2)) && (b.position>p.position)){ //idk why borderh/2 but it just works
+                                //bullet is touching
+                                if(b.colorId!=p.colorId){
+                                    //colors don't match
+                                    p.health--
+                                    if(p.health<1){
+                                        amDead=true
+                                        IDead(p)
+                                    }
+                                    b.isActive=false
+                                    amHit(b)
                                 }
-                                b.isActive=false
-                                amHit(b)
                             }
                         }
                     }
@@ -232,6 +235,9 @@ window.onload = function(){
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
                 context.fillStyle= color;
+                if(p.health<1){
+                    context.fillStyle="grey"
+                }
                 context.fillRect(p.position,bordery,borderh,borderh);
             }
             
@@ -272,8 +278,6 @@ function fireBullet(p,direction,bulletId){
         colorId: p.colorId,
         bulletId: bulletId
     });
-    
-    
 }
 
 function amHit(b){
@@ -283,9 +287,21 @@ function amHit(b){
     })
 }
 
+function IDead(p){
+    socket.emit("IDead",null)
+}
+
 //listen for server events
 socket.on("fireBullet",function(data){
     bullets.push(new bullet(data.startPosition,data.colorId,data.shooterId,data.direction,data.bulletId))
+});
+
+socket.on("IDead",function(data){
+    for( var i = 0; i < players.length; i++){ 
+        if ( players[i].id == data) {
+            players[i].health=0
+        }
+    }
 });
 
 socket.on("amHit",function(data){
