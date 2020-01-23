@@ -316,10 +316,11 @@ socket.on("amHit",function(data){
         //i got the hit
         console.log("I shot "+data.hitPlayerId)
 
+        //regen health
         for( var i = 0; i < players.length; i++){ 
             if ( players[i].id == mySocketId) {
                 players[i].health++
-                if(players[i].health>startingHealth){players[i].health=startingHealth}
+                if(players[i].health>startingHealth && ){players[i].health=startingHealth}
             }
         }
     }
