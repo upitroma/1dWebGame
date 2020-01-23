@@ -315,6 +315,13 @@ socket.on("amHit",function(data){
     if(data.shooterId==mySocketId){
         //i got the hit
         console.log("I shot "+data.hitPlayerId)
+
+        for( var i = 0; i < players.length; i++){ 
+            if ( players[i].id == mySocketId) {
+                players[i].health++
+                if(players[i].health>startingHealth){players[i].health=startingHealth}
+            }
+        }
     }
 
     //destroy bullet
