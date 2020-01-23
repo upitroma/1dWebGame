@@ -4,7 +4,7 @@ var mySocketId = -1
 
 var uploadrate=.3
 var fireRate=1
-var startingHealth=3
+var startingHealth=5
 
 
 //get html assets
@@ -56,15 +56,26 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var bordery=(window.innerHeight/2)-100
-var borderh=100
-var borderm=50
+var borderh=50
+var borderm=100
+var hudw=100//less than borderm
 function drawBorder(){
 
-    context.fillStyle = "black";
+    context.fillStyle = "black"
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle= 'white';
+    context.fillStyle= 'white'
     context.fillRect(borderm,bordery,canvas.width-(2*borderm),borderh);
+}
+function drawHud(health){
+    context.fillStyle= 'grey'
+    //context.fillRect(borderm-hudw,bordery,hudw,borderh)
+
+    context.fillStyle="pink"
+    var x=(hudw*.9)/startingHealth
+    for (i=0;i<health;i++){
+        context.fillRect(borderm-(hudw*.9)+(x*i),bordery,x/2,borderh)
+    }
 }
 
 
@@ -73,6 +84,7 @@ function drawBorder(){
 var uploadtimer=0
 var fireTimer=0
 var bulletId=0
+var amDead=false
 window.onload = function(){
     function update(deltatime){
         // ten times/second
@@ -100,8 +112,8 @@ window.onload = function(){
                 b.position += ((b.colorId*100)+250)*deltatime*b.direction
                 
                 //wrap bullet
-                if(b.position>canvas.width){b.position=0}
-                else if(b.position<0){b.position=canvas.width}
+                if(b.position>canvas.width-(2*borderm)){b.position=borderm}
+                else if(b.position<borderm){b.position=canvas.width-(2*borderm)}
 
 
                 //render bullet
@@ -121,59 +133,64 @@ window.onload = function(){
 
 
             if(p.id==mySocketId){
-                if(keys[65]){
-                    p.position-=200*deltatime//200
-                }
-                if(keys[68]){
-                    p.position+=200*deltatime//200
-                }
 
-                //change color
-                if(keys[69]&&!pastKeys[69]){
-                    p.colorId++
-                    pastKeys[69]=true
-                }
-                else if(!keys[69]){
-                    pastKeys[69]=false
-                }
-                if(keys[81]&&!pastKeys[81]){
-                    p.colorId--
-                    pastKeys[81]=true
-                }
-                else if(!keys[81]){
-                    pastKeys[81]=false
-                }
-                //loop color
-                if(p.colorId<0){
-                    p.colorId=2
-                }
-                if(p.colorId>2){
-                    p.colorId=0
-                }
+                drawHud(p.health)
 
-                //fire bullet
-                fireTimer+=deltatime
+                if(!amDead){//disable player if dead
 
-                if(fireTimer>fireRate){
-                    bulletId++
-                    if(keys[37]&&!pastKeys[37]){
-                        fireBullet(p,-1,bulletId)
-                        pastKeys[37]=true
-                        fireTimer=0
+                    if(keys[65]){
+                        p.position-=200*deltatime//200
                     }
-                    else if(!keys[37]){
-                        pastKeys[37]=false
+                    if(keys[68]){
+                        p.position+=200*deltatime//200
                     }
-                    if(keys[39]&&!pastKeys[39]){
-                        fireBullet(p,1,bulletId)
-                        pastKeys[39]=true
-                        fireTimer=0
+
+                    //change color
+                    if(keys[69]&&!pastKeys[69]){
+                        p.colorId++
+                        pastKeys[69]=true
                     }
-                    else if(!keys[39]){
-                        pastKeys[39]=false
+                    else if(!keys[69]){
+                        pastKeys[69]=false
+                    }
+                    if(keys[81]&&!pastKeys[81]){
+                        p.colorId--
+                        pastKeys[81]=true
+                    }
+                    else if(!keys[81]){
+                        pastKeys[81]=false
+                    }
+                    //loop color
+                    if(p.colorId<0){
+                        p.colorId=2
+                    }
+                    if(p.colorId>2){
+                        p.colorId=0
+                    }
+
+                    //fire bullet
+                    fireTimer+=deltatime
+
+                    if(fireTimer>fireRate){
+                        bulletId++
+                        if(keys[37]&&!pastKeys[37]){
+                            fireBullet(p,-1,bulletId)
+                            pastKeys[37]=true
+                            fireTimer=0
+                        }
+                        else if(!keys[37]){
+                            pastKeys[37]=false
+                        }
+                        if(keys[39]&&!pastKeys[39]){
+                            fireBullet(p,1,bulletId)
+                            pastKeys[39]=true
+                            fireTimer=0
+                        }
+                        else if(!keys[39]){
+                            pastKeys[39]=false
+                        }
                     }
                 }
-                
 
                 //send data
                 uploadtimer+=deltatime
@@ -185,6 +202,7 @@ window.onload = function(){
                 //clamp coordinate within the border
                 p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
                 context.fillStyle= color;
+                if(amDead){context.fillStyle="grey"}
                 context.fillRect(p.position,bordery,borderh,borderh);
 
                 //identify me
@@ -199,7 +217,9 @@ window.onload = function(){
                             if(b.colorId!=p.colorId){
                                 //colors don't match
                                 p.health--
-                                console.log("my health is "+p.health)
+                                if(p.health<1){
+                                    amDead=true
+                                }
                                 b.isActive=false
                                 amHit(b)
                             }
