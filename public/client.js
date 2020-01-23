@@ -4,6 +4,7 @@ var mySocketId = -1
 
 var uploadrate=.3
 var fireRate=1
+var startingHealth=3
 
 
 //get html assets
@@ -22,6 +23,7 @@ class player{
         this.id=id;
         this.isActive=true;
         this.colorId = 2;
+        this.health=startingHealth;
     }
 }
 class bullet{
@@ -98,7 +100,6 @@ window.onload = function(){
                 b.position += ((b.colorId*100)+250)*deltatime*b.direction
                 
                 //wrap bullet
-                //p.position=Math.max(borderm, Math.min(p.position, canvas.width-borderh-borderm))
                 if(b.position>canvas.width){b.position=0}
                 else if(b.position<0){b.position=canvas.width}
 
@@ -193,10 +194,12 @@ window.onload = function(){
                 //collision
                 bullets.forEach(function(b){
                     if(b.isActive){
-                        if(b.position< (p.position+(borderh/2)) && (b.position>p.position)){
+                        if(b.position< (p.position+(borderh/2)) && (b.position>p.position)){ //idk why borderh/2 but it just works
                             //bullet is touching
                             if(b.colorId!=p.colorId){
                                 //colors don't match
+                                p.health--
+                                console.log("my health is "+p.health)
                                 b.isActive=false
                                 amHit(b)
                             }
@@ -224,7 +227,7 @@ window.onload = function(){
     function tick(nowish) {
         var delta = nowish - lastTick
         lastTick = nowish
-        delta/=1000
+        delta/=1000 //ms to s
         update(delta)
         window.requestAnimationFrame(tick)
     }
