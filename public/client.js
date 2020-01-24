@@ -312,15 +312,15 @@ socket.on("amHit",function(data){
     }
 
     //register kill
-    if(data.shooterId==mySocketId){
+    if(data.shooterId==mySocketId && data.hitPlayerId!=mySocketId){
         //i got the hit
         console.log("I shot "+data.hitPlayerId)
 
         //regen health
         for( var i = 0; i < players.length; i++){ 
-            if ( players[i].id == mySocketId) {
+            if ( players[i].id == mySocketId) {//select me
                 players[i].health++
-                if(players[i].health>startingHealth && ){players[i].health=startingHealth}
+                if(players[i].health>startingHealth){players[i].health=startingHealth}//max health
             }
         }
     }
